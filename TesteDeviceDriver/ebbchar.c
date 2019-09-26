@@ -111,11 +111,10 @@ static void __exit ebbchar_exit(void){
  */
 static int dev_open(struct inode *inodep, struct file *filep){
 
-  if(!mutex_trylock(&ebbchar_mutex)){    /// Try to acquire the mutex (i.e., put the lock on/down)
+  mutex_lock(&ebbchar_mutex);   /// Try to acquire the mutex (i.e., put the lock on/down)
                                           /// returns 1 if successful and 0 if there is contention
-      printk(KERN_ALERT "EBBChar: Device in use by another process");
-      return -EBUSY;
-   }
+     // printk(KERN_ALERT "EBBChar: Device in use by another process");
+      //return -EBUSY;
 
    numberOpens++;
    printk(KERN_INFO "EBBChar: Device has been opened %d time(s)\n", numberOpens);
