@@ -16,12 +16,15 @@
 #include <linux/kernel.h>         // Contains types, macros, functions for the kernel
 #include <linux/fs.h>             // Header for the Linux file system support
 #include <linux/uaccess.h>          // Required for the copy to user function
+#include <linux/mutex.h>	         /// Required for the mutex functionality
+#include <linux/moduleparam.h>
+#include <linux/stat.h>
 #define  DEVICE_NAME "ebbchar"    ///< The device will appear at /dev/ebbchar using this value
 #define  CLASS_NAME  "ebb"        ///< The device class -- this is a character device driver
 
 MODULE_LICENSE("GPL");            ///< The license type -- this affects available functionality
-MODULE_AUTHOR("Derek Molloy");    ///< The author -- visible when you use modinfo
-MODULE_DESCRIPTION("A simple Linux char driver for the BBB");  ///< The description -- see modinfo
+MODULE_AUTHOR("JBMC");    ///< The author -- visible when you use modinfo
+MODULE_DESCRIPTION("Famigerado projetinho de SO B");  ///< The description -- see modinfo
 MODULE_VERSION("0.1");            ///< A version number to inform users
 
 static int    majorNumber;                  ///< Stores the device number -- determined automatically
@@ -30,6 +33,44 @@ static short  size_of_message;              ///< Used to remember the size of th
 static int    numberOpens = 0;              ///< Counts the number of times the device is opened
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
+static DEFINE_MUTEX(ebbchar_mutex);  /// A macro that is used to declare a new mutex that is visible in this file
+
+#define PARAM_LEN 16
+static char   crp_key[PARAM_LEN];
+static char   crp_iv[PARAM_LEN];
+static int    crp_key_len;
+static int    crp_iv_len;
+
+char *crp_keyp;
+char *crp_ivp;
+
+module_param(crp_keyp, charp, 0000);
+MODULE_PARM_DESC(crp_keyp, "Key String for AES-CBC");
+module_param(crp_ivp, charp, 0000);
+MODULE_PARM_DESC(crp_ivp, "Initialization Vector for AES-CBC");
+
+/* CODIGO FEIO NN OLHEM PLS */
+static char h2c_conv(char c) {
+	if (c <= '9') return c - '0';
+    return c - 'A' + (char)10;
+}
+static char c2h_conv(char c) {
+    if (c < (char)10) return c + '0';
+    return c + 'A' - (char)10;
+}
+static void h2c(char *hexstrn, char *charstrn, int hexlen) { //Hexlen deve ser par
+    hexlen--;    
+    while ((hexlen -= 2) > 0)
+        charstrn[(int)(hexlen/2)] = h2c_conv(hexstrn[hexlen]) + 16 * h2c_conv(hexstrn[hexlen - 1]);
+}
+static void c2h(char *charstrn, char *hexstrn, int charlen) {
+    charlen--;
+    while (charlen-- >= 0) {
+        hexstrn[2*charlen+1] = c2h_conv(charstrn[charlen] % (char)16); //1s
+        hexstrn[2*charlen] = c2h_conv(charstrn[charlen] / (char)16);   //16s
+    }
+}
+/* PODE OLHAR AGR */
 
 // The prototype functions for the character driver -- must come before the struct definition
 static int     dev_open(struct inode *, struct file *);
@@ -57,6 +98,13 @@ static struct file_operations fops =
  */
 static int __init ebbchar_init(void){
    printk(KERN_INFO "EBBChar: Initializing the EBBChar LKM\n");
+	
+   /*  Copiando conteudo para os vetores */
+	printk(KERN_INFO "%s", crp_keyp);
+   /* Fim Copia */
+
+
+   mutex_init(&ebbchar_mutex);       /// Initialize the mutex lock dynamically at runtime
 
    // Try to dynamically allocate a major number for the device -- more difficult but worth it
    majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
@@ -92,6 +140,7 @@ static int __init ebbchar_init(void){
  *  code is used for a built-in driver (not a LKM) that this function is not required.
  */
 static void __exit ebbchar_exit(void){
+   mutex_destroy(&ebbchar_mutex);        /// destroy the dynamically-allocated mutex
    device_destroy(ebbcharClass, MKDEV(majorNumber, 0));     // remove the device
    class_unregister(ebbcharClass);                          // unregister the device class
    class_destroy(ebbcharClass);                             // remove the device class
@@ -105,6 +154,12 @@ static void __exit ebbchar_exit(void){
  *  @param filep A pointer to a file object (defined in linux/fs.h)
  */
 static int dev_open(struct inode *inodep, struct file *filep){
+
+  mutex_lock(&ebbchar_mutex);   /// Try to acquire the mutex (i.e., put the lock on/down)
+                                          /// returns 1 if successful and 0 if there is contention
+     // printk(KERN_ALERT "EBBChar: Device in use by another process");
+      //return -EBUSY;
+
    numberOpens++;
    printk(KERN_INFO "EBBChar: Device has been opened %d time(s)\n", numberOpens);
    return 0;
@@ -154,6 +209,8 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
  *  @param filep A pointer to a file object (defined in linux/fs.h)
  */
 static int dev_release(struct inode *inodep, struct file *filep){
+
+   mutex_unlock(&ebbchar_mutex);          /// Releases the mutex (i.e., the lock goes up)
    printk(KERN_INFO "EBBChar: Device successfully closed\n");
    return 0;
 }
