@@ -41,13 +41,13 @@ static char   crp_iv[PARAM_LEN];
 static int    crp_key_len;
 static int    crp_iv_len;
 
-char *crp_keyp;
-char *crp_ivp;
+char *key;
+char *iv;
 
-module_param(crp_keyp, charp, 0000);
-MODULE_PARM_DESC(crp_keyp, "Key String for AES-CBC");
-module_param(crp_ivp, charp, 0000);
-MODULE_PARM_DESC(crp_ivp, "Initialization Vector for AES-CBC");
+module_param(key, charp, 0000);
+MODULE_PARM_DESC(key, "Key String for AES-CBC");
+module_param(iv, charp, 0000);
+MODULE_PARM_DESC(iv, "Initialization Vector for AES-CBC");
 
 /* CODIGO FEIO NN OLHEM PLS */
 static char h2c_conv(char c) {
@@ -100,7 +100,7 @@ static int __init ebbchar_init(void){
    printk(KERN_INFO "EBBChar: Initializing the EBBChar LKM\n");
 	
    /*  Copiando conteudo para os vetores */
-	printk(KERN_INFO "%s", crp_keyp);
+	printk(KERN_INFO "%s", key);
    /* Fim Copia */
 
 
