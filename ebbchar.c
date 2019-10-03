@@ -35,12 +35,12 @@ static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct 
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static DEFINE_MUTEX(ebbchar_mutex);  /// A macro that is used to declare a new mutex that is visible in this file
 
-#define PARAM_LEN 32
+#define PARAM_LEN 33
 static char   crp_key[PARAM_LEN];
 static char   crp_iv[PARAM_LEN];
 static int    crp_key_len;
 static int    crp_iv_len;
-
+static char   operacao;
 char *key;
 char *iv;
 
@@ -219,6 +219,19 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
    sprintf(message, "%s(%zu letters)", buffer, len);   // appending received string with its length
    size_of_message = strlen(message);                 // store the length of the stored message
    printk(KERN_INFO "EBBChar: Received %zu characters from the user\n", len);
+
+   switch(message[0]){
+      case 'c': // cifrar
+		printk(KERN_INFO "TO CRIPTOGRAFANDO\n");
+	break;
+	  case 'd': // decifrar
+		printk(KERN_INFO "TO DESCRIPTOGRAFANDO\n");
+    break;
+      case 'h': // resumo criptográico
+		printk(KERN_INFO "TO MANDANDO O RESUMO\n");
+    break;
+   }
+
    return len;
 }
 
