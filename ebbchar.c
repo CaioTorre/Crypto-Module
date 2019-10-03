@@ -35,19 +35,19 @@ static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct 
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static DEFINE_MUTEX(ebbchar_mutex);  /// A macro that is used to declare a new mutex that is visible in this file
 
-#define PARAM_LEN 16
+#define PARAM_LEN 33
 static char   crp_key[PARAM_LEN];
 static char   crp_iv[PARAM_LEN];
 static int    crp_key_len;
 static int    crp_iv_len;
+static char   operacao;
+char *key;
+char *iv;
 
-static char *crp_keyp;
-static char *crp_ivp;
-
-module_param(crp_keyp, charp, 0000);
-MODULE_PARM_DESC(crp_keyp, "Key String for AES-CBC");
-module_param(crp_ivp, charp, 0000);
-MODULE_PARM_DESC(crp_ivp, "Initialization Vector for AES-CBC");
+module_param(key, charp, 0000);
+MODULE_PARM_DESC(key, "Key String for AES-CBC");
+module_param(iv, charp, 0000);
+MODULE_PARM_DESC(iv, "Initialization Vector for AES-CBC");
 
 /* CODIGO FEIO NN OLHEM PLS */
 static char h2c_conv(char c) {
@@ -98,9 +98,28 @@ static struct file_operations fops =
  */
 static int __init ebbchar_init(void){
    printk(KERN_INFO "EBBChar: Initializing the EBBChar LKM\n");
-
+	
    /*  Copiando conteudo para os vetores */
-   
+
+	static int i;
+	for(i = 0; i < strlen(key) && i < PARAM_LEN - 1; i++)
+		crp_key[i] = key[i];
+	
+	if(i < PARAM_LEN - 1) 
+		for(; i < PARAM_LEN - 1; i++)
+			crp_key[i] = '0';
+
+	for(i = 0; i < strlen(iv) && i < PARAM_LEN - 1; i++)
+		crp_iv[i] = iv[i];
+	
+	if(i < PARAM_LEN - 1) 
+		for(; i < PARAM_LEN - 1; i++)
+			crp_iv[i] = '0';
+
+	crp_key[PARAM_LEN - 1] = '\0';
+	crp_iv[PARAM_LEN - 1] = '\0';	
+	
+	printk(KERN_INFO "ENTÂO MEU PACERO: %s %s\n", crp_key, crp_iv);
    /* Fim Copia */
 
 
@@ -200,6 +219,19 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
    sprintf(message, "%s(%zu letters)", buffer, len);   // appending received string with its length
    size_of_message = strlen(message);                 // store the length of the stored message
    printk(KERN_INFO "EBBChar: Received %zu characters from the user\n", len);
+
+   switch(message[0]){
+      case 'c': // cifrar
+		printk(KERN_INFO "TO CRIPTOGRAFANDO\n");
+	break;
+	  case 'd': // decifrar
+		printk(KERN_INFO "TO DESCRIPTOGRAFANDO\n");
+    break;
+      case 'h': // resumo criptográico
+		printk(KERN_INFO "TO MANDANDO O RESUMO\n");
+    break;
+   }
+
    return len;
 }
 
