@@ -43,6 +43,7 @@ static int    crp_iv_len;
 static char   operacao;
 char *key;
 char *iv;
+char mensagemChar[256] = {0};
 
 module_param(key, charp, 0000);
 MODULE_PARM_DESC(key, "Key String for AES-CBC");
@@ -60,8 +61,10 @@ static char c2h_conv(char c) {
 }
 static void h2c(char *hexstrn, char *charstrn, int hexlen) { //Hexlen deve ser par
     hexlen--;    
-    while ((hexlen -= 2) > 0)
+    while (hexlen > 0) {
         charstrn[(int)(hexlen/2)] = h2c_conv(hexstrn[hexlen]) + 16 * h2c_conv(hexstrn[hexlen - 1]);
+	hexlen -= 2;
+	}
 }
 static void c2h(char *charstrn, char *hexstrn, int charlen) {
     charlen--;
@@ -222,7 +225,11 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
    switch(message[0]){
       case 'c': // cifrar
-		printk(KERN_INFO "TO CRIPTOGRAFANDO\n");
+		printk(KERN_INFO "TO CRIPTOGRAFANDO");
+
+		printk(KERN_INFO "Msg[ANTES]= %s", message+2);
+		h2c(message+2, mensagemChar, len-2);
+		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);
 	break;
 	  case 'd': // decifrar
 		printk(KERN_INFO "TO DESCRIPTOGRAFANDO\n");
