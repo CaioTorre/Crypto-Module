@@ -1,11 +1,59 @@
-truct tcrypt_result {
+#include <linux/init.h>           // Macros used to mark up functions e.g. __init __exit
+#include <linux/module.h>         // Core header for loading LKMs into the kernel
+#include <linux/device.h>         // Header to support the kernel Driver Model
+#include <linux/kernel.h>         // Contains types, macros, functions for the kernel
+#include <linux/fs.h>             // Header for the Linux file system support
+#include <linux/uaccess.h>          // Required for the copy to user function
+#include <linux/mutex.h>	         /// Required for the mutex functionality
+#include <linux/moduleparam.h>
+#include <linux/stat.h>
+#include <linux/crypto.h>
+#include <linux/random.h>
+#include <linux/mm.h>
+#include <linux/scatterlist.h>
+#include <crypto/skcipher.h>
+
+#define DEVICE_NAME "ebbchar"    ///< The device will appear at /dev/ebbchar using this value
+#define CLASS_NAME  "ebb"        ///< The device class -- this is a character device driver
+#define PARAM_LEN 33
+#define FILL_SG(sg,ptr,len)     do { (sg)->page_link = virt_to_page(ptr); (sg)->offset = offset_in_page(ptr); (sg)->length = len; } while (0)
+#define DATA_SIZE 256
+
+MODULE_LICENSE("GPL");            ///< The license type -- this affects available functionality
+MODULE_AUTHOR("JBMC");    ///< The author -- visible when you use modinfo
+MODULE_DESCRIPTION("Famigerado projetinho de SO B");  ///< The description -- see modinfo
+MODULE_SUPPORTED_DEVICE("MyCryptoRomance");
+MODULE_VERSION("0.1");            ///< A version number to inform users
+
+static void hexdump(unsigned char *buf, unsigned int len) {
+        while (len--) { printk("%02x", *buf++); }
+        printk("\n");
+}
+
+struct tcrypt_result {
     struct completion completion;
     int err;
 };
 
 /* tie all data structures together */
+/*
+*struct skcipher_request {
+*	unsigned int cryptlen;
+*
+*	u8 *iv;
+*
+*	struct scatterlist *src;
+*	struct scatterlist *dst;
+*
+*	struct crypto_async_request base;
+*	
+*	void *__ctx[] CRYPTO_MINALIGN_ATTR;
+*};
+*/
+
 struct skcipher_def {
-    struct scatterlist sg;
+    struct scatterlist sg_src;
+    struct scatterlist sg_dst;
     struct crypto_skcipher *tfm;
     struct skcipher_request *req;
     struct tcrypt_result result;
@@ -39,15 +87,13 @@ static unsigned int test_skcipher_encdec(struct skcipher_def *sk,
         break;
     case -EINPROGRESS:
     case -EBUSY:
-        rc = wait_for_completion_interruptible(
-            &sk->result.completion);
+        rc = wait_for_completion_interruptible( &sk->result.completion );
         if (!rc && !sk->result.err) {
             reinit_completion(&sk->result.completion);
             break;
         }
     default:
-        pr_info("skcipher encrypt returned with %d result %d\n",
-            rc, sk->result.err);
+        pr_info("skcipher encrypt returned with %d result %d\n", rc, sk->result.err);
         break;
     }
     init_completion(&sk->result.completion);
@@ -66,9 +112,9 @@ static int test_skcipher(void)
     unsigned char key[32];
     int ret = -EFAULT;
 
-    skcipher = crypto_alloc_skcipher("cbc-aes-aesni", 0, 0);
+    skcipher = crypto_alloc_skcipher("cbc(aes)", 0, 0); //cbc-aes-aesni
     if (IS_ERR(skcipher)) {
-        pr_info("could not allocate skcipher handle\n");
+        pr_info("could not allocate skcipher handle (%ld)\n", PTR_ERR(skcipher));
         return PTR_ERR(skcipher);
     }
 
@@ -79,9 +125,7 @@ static int test_skcipher(void)
         goto out;
     }
 
-    skcipher_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG,
-                      test_skcipher_cb,
-                      &sk.result);
+    skcipher_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG, test_skcipher_cb, &sk.result);
 
     /* AES 256 with random key */
     get_random_bytes(&key, 32);
@@ -91,6 +135,8 @@ static int test_skcipher(void)
         goto out;
     }
 
+    printk(KERN_INFO "Key: "); hexdump(key, 32);
+
     /* IV will be random */
     ivdata = kmalloc(16, GFP_KERNEL);
     if (!ivdata) {
@@ -99,6 +145,8 @@ static int test_skcipher(void)
     }
     get_random_bytes(ivdata, 16);
 
+    printk(KERN_INFO "IV: "); hexdump(ivdata, 16);
+    
     /* Input data will be random */
     scratchpad = kmalloc(16, GFP_KERNEL);
     if (!scratchpad) {
@@ -106,13 +154,14 @@ static int test_skcipher(void)
         goto out;
     }
     get_random_bytes(scratchpad, 16);
+    printk(KERN_INFO "Data: "); hexdump(scratchpad, 16);
 
     sk.tfm = skcipher;
     sk.req = req;
 
     /* We encrypt one block */
-    sg_init_one(&sk.sg, scratchpad, 16);
-    skcipher_request_set_crypt(req, &sk.sg, &sk.sg, 16, ivdata);
+    sg_init_one(&sk.sg_src, scratchpad, 16);
+    skcipher_request_set_crypt(req, &sk.sg_src, &sk.sg_src, 16, ivdata);
     init_completion(&sk.result.completion);
 
     /* encrypt data */
@@ -122,6 +171,11 @@ static int test_skcipher(void)
 
     pr_info("Encryption triggered successfully\n");
 
+    //char *buf;
+    //buf = sg_virt (&sk.sg_dst);
+    //printk(KERN_INFO "Result: "); hexdump(buf, 16);
+    //pr_info("Result: %s\n", buf);
+    
 out:
     if (skcipher)
         crypto_free_skcipher(skcipher);
@@ -133,3 +187,22 @@ out:
         kfree(scratchpad);
     return ret;
 }
+
+static int __init cripty_init(void){
+   pr_info("Inicializado cripty.c\n");	
+
+   test_skcipher(); //param key e iv
+   
+   return 0;
+}
+
+/** @brief The LKM cleanup function
+ *  Similar to the initialization function, it is static. The __exit macro notifies that if this
+ *  code is used for a built-in driver (not a LKM) that this function is not required.
+ */
+static void __exit cripty_exit(void){
+   pr_info("Finalizando cripty.c\n");
+}
+
+module_init(cripty_init);
+module_exit(cripty_exit);
