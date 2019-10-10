@@ -30,13 +30,13 @@ static char crp_iv_hex[PARAM_LEN];
 static char crp_key[PARAM_LEN];
 static char crp_iv[PARAM_LEN];
 
-static int    crp_key_len;
-static int    crp_iv_len;
-static char   operacao;
+//static int    crp_key_len;
+//static int    crp_iv_len;
+//static char   operacao;
 char *key;
 char *iv;
 char mensagemChar[DATA_SIZE] = {0};
-char *msgRet;
+static char msgRet[DATA_SIZE];
 
 
 module_param(key, charp, 0000);
@@ -172,7 +172,7 @@ static unsigned int test_skcipher_encdec(struct skcipher_def *sk, int enc)
 }
 
 /* Initialize and trigger cipher operation */
-static char* test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadParam, int a)
+static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadParam, int a)
 {
     int x;
     struct skcipher_def sk;
@@ -262,7 +262,10 @@ out:
         kfree(ivdata);
     if (scratchpad)
         kfree(scratchpad);
-    return resultdata;
+        
+    //printk(KERN_INFO "RESULT: %s", resultdata);
+    for(x=0;x<32;x++)msgRet[x]=resultdata[x]; 
+    return ret;
 }
 
 static int __init cripty_init(void){
@@ -380,7 +383,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		printk(KERN_INFO "Msg[ANTES]= %s", message+2);
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);
-		msgRet = test_skcipher(crp_key,crp_iv,mensagemChar, 1); //param key e iv
+		test_skcipher(crp_key,crp_iv,mensagemChar, 1); //param key e iv
 		break;
 	  case 'd': // decifrar
 	
@@ -388,7 +391,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		printk(KERN_INFO "Msg[ANTES]= %s", message+2);
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);		
-		msgRet = test_skcipher(crp_key,crp_iv,mensagemChar, 0);
+		test_skcipher(crp_key,crp_iv,mensagemChar, 0);
     		break;
       case 'h': // resumo criptográico
 		printk(KERN_INFO "TO MANDANDO O RESUMO\n");
