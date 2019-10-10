@@ -36,8 +36,7 @@ static char crp_iv[PARAM_LEN];
 char *key;
 char *iv;
 char mensagemChar[DATA_SIZE] = {0};
-char msgRet[DATA_SIZE] = {0};
-
+static char msgRet[DATA_SIZE] = {0};
 
 module_param(key, charp, 0000);
 MODULE_PARM_DESC(key, "Key String for AES-CBC");
@@ -93,7 +92,8 @@ static struct file_operations fops =
 };
 
 static void hexdump(unsigned char *buf, unsigned int len) {
-        while (len--) { printk("%02x CHAR: %c", *buf, *buf); *buf++;}
+		unsigned char* aux = buf;
+        while (len--) { printk("%02x - %u", *aux++, (unsigned int)*aux); }
         printk("\n");
 }
 
@@ -179,7 +179,7 @@ static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadPara
     struct crypto_skcipher *skcipher = NULL;
     struct skcipher_request *req = NULL;
     char *scratchpad = NULL;
-    char *resultdata = NULL;
+    unsigned char *resultdata = NULL;
     char *ivdata = NULL;
     unsigned char key[32];
     int ret = -EFAULT;
@@ -252,7 +252,8 @@ static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadPara
     /* print results */
     resultdata = sg_virt(&sk.sg);
     printk(KERN_INFO "Result: "); hexdump(resultdata, 32);
-    
+    for(x=0;x<32;x++)msgRet[x]=resultdata[x];
+	
 out:
     if (skcipher)
         crypto_free_skcipher(skcipher);
@@ -262,9 +263,6 @@ out:
         kfree(ivdata);
     if (scratchpad)
         kfree(scratchpad);
-        
-    //printk(KERN_INFO "RESULT: %s", resultdata);
-    for(x=0;x<32;x++)msgRet[x]=resultdata[x]; 
     return ret;
 }
 
@@ -359,12 +357,10 @@ static int dev_open(struct inode *inodep, struct file *filep){
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
    int error_count = 0;
    // copy_to_user has the format ( * to, *from, size) and returns 0 on success
-   
-   h2c(msgRet, mensagemChar, 32);
-   static int i;
-   for(i = 0; i < 16; i++)
-   printk(KERN_INFO "PF FUNCIONA: %d", mensagemChar[i]);
-   error_count = copy_to_user(buffer, mensagemChar, size_of_message);
+   //h2c(msgRet, msg, 32);
+   int i;
+	hexdump(msgRet, 32);
+   error_count = copy_to_user(buffer, msgRet, size_of_message);
    
    if (error_count==0){            // if true then have success
       printk(KERN_INFO "EBBChar: Sent %d characters to the user\n", size_of_message);
@@ -389,6 +385,9 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);
 		test_skcipher(crp_key,crp_iv,mensagemChar, 1); //param key e iv
+		
+		
+		
 		break;
 	  case 'd': // decifrar
 	

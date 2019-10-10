@@ -16,7 +16,7 @@
 #include<unistd.h>
 
 #define BUFFER_LENGTH 256               ///< The buffer length (crude but fine)
-static char receive[BUFFER_LENGTH];     ///< The receive buffer from the LKM
+unsigned char receive[BUFFER_LENGTH];     ///< The receive buffer from the LKM
 
 int main(){
    int ret, fd;
@@ -48,7 +48,11 @@ int main(){
       return errno;
    }
 
-   for(int i=0;i<16;i++)printf("The received message is: [%d]\n", receive[i]);
+	unsigned char c;
+   for(int i=0;i<32;i++) {
+	c = receive[i];
+	printf("The received message is: [%u]\n", c);
+}
    printf("End of the program\n");
    return 0;
 }
