@@ -36,7 +36,7 @@ static char crp_iv[PARAM_LEN];
 char *key;
 char *iv;
 char mensagemChar[DATA_SIZE] = {0};
-static char msgRet[DATA_SIZE];
+char msgRet[DATA_SIZE] = {0};
 
 
 module_param(key, charp, 0000);
@@ -93,7 +93,7 @@ static struct file_operations fops =
 };
 
 static void hexdump(unsigned char *buf, unsigned int len) {
-        while (len--) { printk("%02x", *buf++); }
+        while (len--) { printk("%02x CHAR: %c", *buf, *buf); *buf++;}
         printk("\n");
 }
 
@@ -359,7 +359,12 @@ static int dev_open(struct inode *inodep, struct file *filep){
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
    int error_count = 0;
    // copy_to_user has the format ( * to, *from, size) and returns 0 on success
-   error_count = copy_to_user(buffer, msgRet, size_of_message);
+   
+   h2c(msgRet, mensagemChar, 32);
+   static int i;
+   for(i = 0; i < 16; i++)
+   printk(KERN_INFO "PF FUNCIONA: %d", mensagemChar[i]);
+   error_count = copy_to_user(buffer, mensagemChar, size_of_message);
    
    if (error_count==0){            // if true then have success
       printk(KERN_INFO "EBBChar: Sent %d characters to the user\n", size_of_message);
