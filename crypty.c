@@ -17,7 +17,7 @@
 #define CLASS_NAME  "MyCrypto"        ///< The device class -- this is a character device driver
 #define PARAM_LEN 33
 #define FILL_SG(sg,ptr,len)     do { (sg)->page_link = virt_to_page(ptr); (sg)->offset = offset_in_page(ptr); (sg)->length = len; } while (0)
-#define DATA_SIZE 16
+#define DATA_SIZE 64
 
 MODULE_LICENSE("GPL");            ///< The license type -- this affects available functionality
 MODULE_AUTHOR("JBMC");    ///< The author -- visible when you use modinfo
@@ -341,7 +341,7 @@ static int __init cripty_init(void){
     printk(KERN_INFO "ENTÂO MEU PACERO: %s %s\n", crp_key, crp_iv);
    /* Fim Copia */
    
-   mutex_init(&ebbchar_mutex);// Initialize the mutex lock dynamically at runtime
+   //mutex_init(&ebbchar_mutex);// Initialize the mutex lock dynamically at runtime
    
    // Try to dynamically allocate a major number for the device -- more difficult but worth it
    majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
