@@ -51,6 +51,8 @@ static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct 
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static DEFINE_MUTEX(ebbchar_mutex);  /// A macro that is used to declare a new mutex that is visible in this file
 
+//https://www.kernel.org/doc/html/v4.16/crypto/api-skcipher.html
+
 /* CODIGO FEIO NN OLHEM PLS */
 static char h2c_conv(char c) {
 	if (c <= '9') return c - '0';
@@ -123,13 +125,13 @@ struct tcrypt_result {
 struct skcipher_def {
     //struct scatterlist sg_src;
     //struct scatterlist sg_dst;
-    struct scatterlist sg[3];
+    struct scatterlist sg[6];
     struct crypto_skcipher *tfm;
     struct skcipher_request *req;
     struct tcrypt_result result;
 };
 
-/* Callback function */
+/* Callback function 
 static void test_skcipher_cb(struct crypto_async_request *req, int error)
 {
     struct tcrypt_result *result = req->data;
@@ -139,9 +141,9 @@ static void test_skcipher_cb(struct crypto_async_request *req, int error)
     result->err = error;
     complete(&result->completion);
     pr_info("Encryption finished successfully\n");
-}
+}*/
 
-/* Perform cipher operation */
+/* Perform cipher operation 
 static unsigned int test_skcipher_encdec(struct skcipher_def *sk, int enc)
 {
     int rc = 0;
@@ -169,7 +171,7 @@ static unsigned int test_skcipher_encdec(struct skcipher_def *sk, int enc)
     init_completion(&sk->result.completion);
 
     return rc;
-}
+}*/
 
 /* Initialize and trigger cipher operation */
 static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadParam, int a)
@@ -208,16 +210,15 @@ static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadPara
         pr_info("could not allocate key\n");
         goto out;
     }
-    /*
+    
+    for(x=0; x<32; x++) key[x] = keyParam[x];
+    //printk(KERN_INFO "Key: "); hexdump(key, 32);
+    
     if (crypto_skcipher_setkey(skcipher, key, 32)) {
         pr_info("key could not be set\n");
         ret = -EAGAIN;
         goto out;
     }
-    */
-    for(x=0; x<32; x++) key[x] = keyParam[x];
-
-    printk(KERN_INFO "Key: "); hexdump(key, 32);
 
     /* IV will be random */
     ivdata = kmalloc(32, GFP_KERNEL);
@@ -228,22 +229,22 @@ static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadPara
     //get_random_bytes(ivdata, 16);
     for(x=0; x<32; x++) ivdata[x] = ivdataParam[x];
 
-    printk(KERN_INFO "IV: "); hexdump(ivdata, 32);
+    //printk(KERN_INFO "IV: "); hexdump(ivdata, 32);
     
     /* Input data*/
-    scratchpad = kmalloc(DATA_SIZE, GFP_KERNEL);
+    scratchpad = kmalloc(256, GFP_KERNEL);
     if (!scratchpad) {
         pr_info("could not allocate scratchpad\n");
         goto out;
     }
     
-   	criptograf = kmalloc(32, GFP_KERNEL);
+   	criptograf = kmalloc(256, GFP_KERNEL);
     if (!scratchpad) {
         pr_info("could not allocate criptograf\n");
         goto out;
     }
     
-    descriptograf = kmalloc(32, GFP_KERNEL);
+    descriptograf = kmalloc(256, GFP_KERNEL);
     if (!scratchpad) {
         pr_info("could not allocate descriptograf\n");
         goto out;
@@ -254,29 +255,33 @@ static int test_skcipher(char *keyParam, char *ivdataParam, char *scratchpadPara
 
 
     sk.tfm = skcipher;
-    //sk.req = req;
+    sk.req = req;
 
     /* We encrypt one block */;
     for(x=0; x<DATA_SIZE; x++) scratchpad[x] = scratchpadParam[x];
-    printk(KERN_INFO "Data: "); hexdump(scratchpad, DATA_SIZE);
+    //printk(KERN_INFO "Data: "); hexdump(scratchpad, DATA_SIZE);
     //for(x=0; x<16; x++) sg_init_one(&sk.sg[0]+x, scratchpad*x, 16);
-    sg_init_one(&sk.sg[0], scratchpad, 16);//input
-    sg_init_one(&sk.sg[1], criptograf, 16);//criptograf
-    sg_init_one(&sk.sg[2], descriptograf, 16);//descriptograf
-    //crypt
-    skcipher_request_set_crypt(req, &sk.sg[0], &sk.sg[1], 16, ivdata);
-    //decrypt
-    skcipher_request_set_crypt(req, &sk.sg[1], &sk.sg[2], 16, ivdata);
-    
+    sg_init_one(&sk.sg[0], scratchpad, 256);//input
+    sg_init_one(&sk.sg[1], criptograf, 256);//criptograf
+    sg_init_one(&sk.sg[2], descriptograf, 256);//descriptograf
+    switch(a){
+    	case 1://crypt
+    	skcipher_request_set_crypt(req, &sk.sg[0], &sk.sg[1], 16, ivdata);
+    	ret = crypto_skcipher_encrypt(req);
+    	break;
+		case 0://decrypt
+		skcipher_request_set_crypt(req, &sk.sg[1], &sk.sg[2], 16, ivdata);
+		ret = crypto_skcipher_decrypt(req);
+		break;
+    }
     //init_completion(&sk.result.completion);
     
 
     /* encrypt data */
-    /*
-    ret = test_skcipher_encdec(&sk, a);
+ 
+    //ret = test_skcipher_encdec(&sk, a);
     if (ret)
         goto out;
-	*/
     //pr_info("Encryption triggered successfully\n");
 
     /* print results */
@@ -403,7 +408,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
    // copy_to_user has the format ( * to, *from, size) and returns 0 on success
    //h2c(msgRet, msg, 32);
    int i;
-	hexdump(msgRet, DATA_SIZE);
+	//hexdump(msgRet, DATA_SIZE);
    error_count = copy_to_user(buffer, msgRet, size_of_message);
    
    if (error_count==0){            // if true then have success
