@@ -64,7 +64,7 @@ int main(){
 						printf("decifr");
 					break;
 				case 3:
-						printf("hash");
+						printf("hashe");
 					break;
 			}
 			
@@ -73,7 +73,7 @@ int main(){
 			scanf("%[^\n]%*c", stringToSend);  // Read in a string (with spaces)
 			
 			if(op == 2)
-				c2h(stringToSend, &(send[2]), strlen(stringToSend));
+				c2h(stringToSend, &(send[2]), strlen(stringToSend) + 1);
 			
 			send[0] = fu[opcao - 1];
 			send[1] = ' ';		
