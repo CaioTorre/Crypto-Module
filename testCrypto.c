@@ -72,15 +72,17 @@ int main(){
 			getchar();
 			scanf("%[^\n]%*c", stringToSend);  // Read in a string (with spaces)
 			
+			send[0] = ' ';
+			send[1] = ' ';
+			
 			if(op == 2)
 				c2h(stringToSend, &(send[2]), strlen(stringToSend) + 1);
-			
-			send[0] = fu[opcao - 1];
-			send[1] = ' ';		
+			else
+			    strcat(send, stringToSend);
 	
-			
-			//strcat(send, stringToSend);
-			
+	        send[0] = fu[opcao - 1];
+			send[1] = ' ';	
+	
 			printf("Enviarei: [%s]\n", send);
 			return 0;
 			//ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
