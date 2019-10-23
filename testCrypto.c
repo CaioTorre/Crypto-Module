@@ -22,7 +22,7 @@ int main(){
 	do{
 		
 		do{
-			system("clear");
+			//system("clear");
 			printf("-------------------------------------------------\n");
 			printf(" Digite a opcao desejada: \n\n");
 			printf(" 0. Sair;\n");
@@ -43,7 +43,7 @@ int main(){
 		}
 			
 	
-		system("clear");
+		//system("clear");
 		printf("-------------------------------------------------\n");
 		printf(" Digite a forma que deseja digitar a string: \n\n");
 		printf(" 1. Hexadecimal;\n");
@@ -71,10 +71,12 @@ int main(){
 		printf("ada: ");
 		getchar();
 		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
-		printf("%s\n", send);
+		
+		//printf("%s\n", send);
 	
 		if(op == 2){
-			c2h(send, &(stringToSend[2]), strlen(send) + 1);			
+			c2h(send, &(stringToSend[2]), strlen(send)); //+1
+			stringToSend[2 + strlen(send) * 2] = 0;			
       		}else{
 	    		strcpy(&(stringToSend[2]), send);
 			stringToSend[strlen(send) + 2] = 0;
@@ -92,10 +94,10 @@ int main(){
 			return errno;
 		}
 
-		printf("Press ENTER to read back from the device...\n");
-		getchar();
+		//printf("Press ENTER to read back from the device...\n");
+		//getchar();
 
-		printf("Reading from the device...\n");
+		//printf("Reading from the device...\n");
 	
 		ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
 		if (ret < 0){
@@ -105,26 +107,28 @@ int main(){
             
 		int temp = strlen(stringToSend) - 2;
 		if (temp % 16) {
+			printf("Temp = %d\n", temp);
 			temp /= 16;
 			temp += 1;
 			temp *= 16;
+			printf("New = %d\n", temp);
 	    	}
             
 		unsigned char c;
 
-		printf("Hex: ");
-			for(int i=0;i<strlen(receive);i++) {
+		printf("Hex: [");
+			for(int i=0;i<temp;i++) {
 			c = receive[i];
 			printf("%02X", c);
 		}
-		printf("\n\n");
+		printf("]\n\n");
 	
-		printf("ASCII: ");
-		for(int i=0;i<strlen(receive);i++) {
+		printf("ASCII: [");
+		for(int i=0;i<temp;i++) {
 			c = receive[i];
 			printf("%c", c);
 		}
-		printf("\n");
+		printf("]\n");
 	
 		printf("Press ENTER to return to menu...\n");
 		getchar();
@@ -143,12 +147,12 @@ int main(){
 
 void c2h(char *charstrn, char *hexstrn, int charlen) {
 	int tam = charlen;
-	charlen--;
+	//charlen--;
     while (charlen-- >= 0) {
         hexstrn[2*charlen+1] = c2h_conv(charstrn[charlen] % (char)16); //1s
         hexstrn[2*charlen] = c2h_conv(charstrn[charlen] / (char)16);   //16s
     }
-	hexstrn[2*tam] = 0;
+	hexstrn[2*tam+2] = 0;
 }
 
 char c2h_conv(char c) {
