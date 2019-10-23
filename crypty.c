@@ -202,9 +202,11 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     
     /* Verificar se será necessário fazer padding */
     if (tam_plaintext % AES_IV_SIZE_BYTES) {
+        printk(KERN_INFO "Got incomplete blocks (%d bytes, or %d blocks)", tam_plaintext, tam_plaintext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = 1 + (tam_plaintext / AES_IV_SIZE_BYTES);
         scratchpad_size = AES_IV_SIZE_BYTES * n_cipher_blocks;
     } else {
+        printk(KERN_INFO "Got complete blocks (%d bytes, or %d blocks)", tam_plaintext, tam_plaintext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = tam_plaintext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_plaintext;
     }
@@ -358,9 +360,11 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     
     /* Verificar se será necessário fazer padding */
     if (tam_ciphertext % AES_IV_SIZE_BYTES) {
+        printk(KERN_INFO "Got incomplete blocks (%d bytes, or %d blocks)", tam_ciphertext, tam_ciphertext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = 1 + (tam_ciphertext / AES_IV_SIZE_BYTES);
         scratchpad_size = AES_IV_SIZE_BYTES * n_cipher_blocks;
     } else {
+        printk(KERN_INFO "Got complete blocks (%d bytes, or %d blocks)", tam_ciphertext, tam_ciphertext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = tam_ciphertext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_ciphertext;
     }
@@ -548,11 +552,11 @@ static int dev_open(struct inode *inodep, struct file *filep){
 
   mutex_lock(&ebbchar_mutex);   // Try to acquire the mutex (i.e., put the lock on/down)
                                 // returns 1 if successful and 0 if there is contention
-   printk(KERN_ALERT "EBBChar: Device in use by another process");
+   //printk(KERN_ALERT "EBBChar: Device in use by another process");
    //return -EBUSY;
 
    numberOpens++;
-   printk(KERN_INFO "EBBChar: Device has been opened %d time(s)\n", numberOpens);
+   //printk(KERN_INFO "EBBChar: Device has been opened %d time(s)\n", numberOpens);
    return 0;
 }
 

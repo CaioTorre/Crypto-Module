@@ -44,6 +44,7 @@ int main(){
 			
 	
 		//system("clear");
+		/*
 		if(opcao == 1){
 			printf("-------------------------------------------------\n");
 			printf(" Digite a forma que deseja digitar a string: \n\n");
@@ -54,7 +55,8 @@ int main(){
 			printf("-------------------------------------------------\n");
 		}else{
 			op = 1;				
-		}	
+		}	*/
+		op = 1;
 	        char fu[] = {'c', 'd', 'h'};
 			
 		printf("\nDigite a string a ser ");
@@ -75,73 +77,68 @@ int main(){
 		getchar();
 		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
 		
-		for (int i = 0; send[i] != '\0'; i++)
-			if(send[i] >= 'a' && send[i] <= 'z')
-				send[i] = send[i] -32;
+		for(int i = 0; i < strlen(string); i++)
+		{
+			if(string[i] >= 'a' && string[i]<='z')
+			string[i]-=32;
+		}
 		
-		printf("%s\n", send);
+		//printf("%s\n", send);
 	
 		if(op == 2){
 			c2h(send, &(stringToSend[2]), strlen(send)); //+1
 			stringToSend[2 + strlen(send) * 2] = 0;			
-      		}else{
-	    		strcpy(&(stringToSend[2]), send);
-			stringToSend[strlen(send) + 2] = 0;
+      	}else{
+      	    int p;
+      	    for (p = 0; p < strlen(send); p++) stringToSend[p + 2] = send[p];
+			stringToSend[p + 2] = 0;
 		}
 	
 		stringToSend[0] = fu[opcao - 1];
 		stringToSend[1] = ' ';	
 	
 		
-		printf("Enviarei: [%s]\n", stringToSend);
+		printf("Enviarei: [%s]\n\n", stringToSend);
 	
 		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
 		if (ret < 0){
 			perror("Failed to write the message to the device.");
 			return errno;
 		}
-
-		//printf("Press ENTER to read back from the device...\n");
-		//getchar();
-
-		//printf("Reading from the device...\n");
 	
 		ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+		
 		if (ret < 0){
 			perror("Failed to read the message from the device.");
 			return errno;
 		}
-            
-		int temp = strlen(stringToSend) - 2;
-		if (temp % 16) {
-			printf("Temp = %d\n", temp);
-			temp /= 16;
-			temp += 1;
-			temp *= 16;
-			printf("New = %d\n", temp);
-	    	}
-            
+        
+        int tamanho_new = 0;
+        while (receive[tamanho_new] != 0) tamanho_new++;
+        //printf("Tamanho new = %d\n", tamanho_new);
+        
 		unsigned char c;
 
-		printf("Hex: [");
-			for(int i=0;i<temp;i++) {
+		printf("Hex:   [");
+			for(int i=0;i<tamanho_new;i++) {
 			c = receive[i];
 			printf("%02X", c);
 		}
-		printf("]\n\n");
+		printf("]\n");
 	
 		printf("ASCII: [");
-		for(int i=0;i<temp;i++) {
+		for(int i=0;i<tamanho_new;i++) {
 			c = receive[i];
-			printf("%c", c);
+			printf(" %c", c);
 		}
 		printf("]\n");
 	
+	    for(int i=0;i<BUFFER_LENGTH;i++) receive[i] = 0;
+	    
 		printf("Press ENTER to return to menu...\n");
 		getchar();
 	
 		stringToSend[0] = 0;
-
 		}
 		
 	}while(opcao != 0);
