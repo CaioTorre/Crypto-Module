@@ -73,16 +73,17 @@ int main(){
 		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
 		printf("%s\n", send);
 	
-		if(op == 2)
-			c2h(send, &(stringToSend[2]), strlen(send) + 1);
-      		else
+		if(op == 2){
+			c2h(send, &(stringToSend[2]), strlen(send) + 1);			
+      		}else{
 	    		strcpy(&(stringToSend[2]), send);
-
+			stringToSend[strlen(send) + 2] = 0;
+		}
 	
 		stringToSend[0] = fu[opcao - 1];
 		stringToSend[1] = ' ';	
 	
-		stringToSend[strlen(send) + 2] = 0;
+		
 		printf("Enviarei: [%s]\n", stringToSend);
 	
 		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
@@ -112,14 +113,14 @@ int main(){
 		unsigned char c;
 
 		printf("Hex: ");
-			for(int i=0;i<temp;i++) {
+			for(int i=0;i<strlen(receive);i++) {
 			c = receive[i];
 			printf("%02X", c);
 		}
 		printf("\n\n");
 	
 		printf("ASCII: ");
-		for(int i=0;i<temp;i++) {
+		for(int i=0;i<strlen(receive);i++) {
 			c = receive[i];
 			printf("%c", c);
 		}
@@ -141,11 +142,13 @@ int main(){
 }
 
 void c2h(char *charstrn, char *hexstrn, int charlen) {
-    charlen--;
+	int tam = charlen;
+	charlen--;
     while (charlen-- >= 0) {
         hexstrn[2*charlen+1] = c2h_conv(charstrn[charlen] % (char)16); //1s
         hexstrn[2*charlen] = c2h_conv(charstrn[charlen] / (char)16);   //16s
     }
+	hexstrn[2*tam] = 0;
 }
 
 char c2h_conv(char c) {

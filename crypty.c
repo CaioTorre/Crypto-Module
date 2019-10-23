@@ -364,6 +364,7 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
         n_cipher_blocks = tam_ciphertext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_ciphertext;
     }
+
     pr_info("Tamanho do plaintext depois do padding: %d bytes (%d blocos)\n", scratchpad_size, n_cipher_blocks);
     
     /* Requisitar uma área de memória para alocar o plaintext */
@@ -410,7 +411,8 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
 	printk(KERN_INFO "=====  END RESULT DECRYPT  =====");
     
     /* Armazenar resposta para devolver ao programa */
-    for(x=0;x<scratchpad_size;x++)msgRet[x]=resultdata[x];
+   
+    for(x=0;x<scratchpad_size;x++) msgRet[x]=resultdata[x];
     msgRet[x] = 0;
     
     /* Armazenar tamanho da resposta do programa */
