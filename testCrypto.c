@@ -44,17 +44,20 @@ int main(){
 			
 	
 		//system("clear");
-		printf("-------------------------------------------------\n");
-		printf(" Digite a forma que deseja digitar a string: \n\n");
-		printf(" 1. Hexadecimal;\n");
-		printf(" 2. ASCII;\n\n");
-		printf(" Opcao: ");
-		scanf("%i", &op);
-		printf("-------------------------------------------------\n");
-	
+		if(opcao == 1){
+			printf("-------------------------------------------------\n");
+			printf(" Digite a forma que deseja digitar a string: \n\n");
+			printf(" 1. Hexadecimal;\n");
+			printf(" 2. ASCII;\n\n");
+			printf(" Opcao: ");
+			scanf("%i", &op);
+			printf("-------------------------------------------------\n");
+		}else{
+			op = 1;				
+		}	
 	        char fu[] = {'c', 'd', 'h'};
 			
-		printf("Digite a string a ser ");
+		printf("\nDigite a string a ser ");
 		
 		switch(opcao){
 			case 1:
