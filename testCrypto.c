@@ -40,98 +40,96 @@ int main(){
 				perror("FOMOS FALHOS AO ABRIR O DISPOSITIVO...\n");
 				printf("Erro cod. %d, %d\n", fd, (int)errno);
 				return errno;
-			}
+		}
 			
 	
-			system("clear");
-			printf("-------------------------------------------------\n");
-			printf(" Digite a forma que deseja digitar a string: \n\n");
-			printf(" 1. Hexadecimal;\n");
-			printf(" 2. ASCII;\n\n");
-			printf(" Opcao: ");
-			scanf("%i", &op);
-			printf("-------------------------------------------------\n");
+		system("clear");
+		printf("-------------------------------------------------\n");
+		printf(" Digite a forma que deseja digitar a string: \n\n");
+		printf(" 1. Hexadecimal;\n");
+		printf(" 2. ASCII;\n\n");
+		printf(" Opcao: ");
+		scanf("%i", &op);
+		printf("-------------------------------------------------\n");
 	
 	        char fu[] = {'c', 'd', 'h'};
 			
-			printf("Digite a string a ser ");
+		printf("Digite a string a ser ");
+		
+		switch(opcao){
+			case 1:
+					printf("cifr");
+				break;
+			case 2:
+					printf("decifr");
+				break;
+			case 3:
+					printf("hashe");
+				break;
+		}
 			
-			switch(opcao){
-				case 1:
-						printf("cifr");
-					break;
-				case 2:
-						printf("decifr");
-					break;
-				case 3:
-						printf("hashe");
-					break;
-			}
-			
-			printf("ada: ");
-			getchar();
-			scanf("%[^\n]%*c", stringToSend);  // Read in a string (with spaces)
-			
-			send[0] = ' ';
-			send[1] = ' ';
-			
-			if(op == 2)
-				c2h(&(stringToSend[2]), &(send[2]), strlen(stringToSend) + 1);
+		printf("ada: ");
+		getchar();
+		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
+		printf("%s\n", send);
 	
-	        stringToSend[0] = fu[opcao - 1];
-			stringToSend[1] = ' ';	
+		if(op == 2)
+			c2h(send, &(stringToSend[2]), strlen(send) + 1);
+      		else
+	    		strcpy(&(stringToSend[2]), send);
+
 	
-			printf("Enviarei: [%s]\n", stringToSend);
-			
-			ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
-			if (ret < 0){
-				perror("Failed to write the message to the device.");
-				return errno;
-			}
+		stringToSend[0] = fu[opcao - 1];
+		stringToSend[1] = ' ';	
+	
+		stringToSend[strlen(send) + 2] = 0;
+		printf("Enviarei: [%s]\n", stringToSend);
+	
+		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
+		if (ret < 0){
+			perror("Failed to write the message to the device.");
+			return errno;
+		}
 
-			printf("Press ENTER to read back from the device...\n");
-			getchar();
+		printf("Press ENTER to read back from the device...\n");
+		getchar();
 
-			printf("Reading from the device...\n");
-			
-			ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
-			if (ret < 0){
-				perror("Failed to read the message from the device.");
-				return errno;
-			}
+		printf("Reading from the device...\n");
+	
+		ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+		if (ret < 0){
+			perror("Failed to read the message from the device.");
+			return errno;
+		}
             
-            int temp = strlen(stringToSend);
-            if (temp % 16) {
-                temp /= 16;
-                temp += 1;
-                temp *= 16;
-            }
+		int temp = strlen(stringToSend) - 2;
+		if (temp % 16) {
+			temp /= 16;
+			temp += 1;
+			temp *= 16;
+	    	}
             
-			unsigned char c;
-			/*
-            for(int i=0;i<32;i++) {
-				c = receive[i];
-				printf("The received message is: [%u]\n", c);
-			}
-            */
-			printf("Hex: ");
-				for(int i=0;i<temp;i++) {
-				c = receive[i];
-				printf("%02X", c);
-			}
-			printf("\n\n");
-			
-			printf("ASCII: ");
+		unsigned char c;
+
+		printf("Hex: ");
 			for(int i=0;i<temp;i++) {
-				c = receive[i];
-				printf("%c", c);
-			}
-			printf("\n");
-			
-			printf("Press ENTER to return to menu...\n");
-			getchar();
-			
-			stringToSend[0] = 0;
+			c = receive[i];
+			printf("%02X", c);
+		}
+		printf("\n\n");
+	
+		printf("ASCII: ");
+		for(int i=0;i<temp;i++) {
+			c = receive[i];
+			printf("%c", c);
+		}
+		printf("\n");
+	
+		printf("Press ENTER to return to menu...\n");
+		getchar();
+	
+		stringToSend[0] = 0;
+
 		}
 		
 	}while(opcao != 0);
