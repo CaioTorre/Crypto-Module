@@ -1,3 +1,11 @@
+/*
+Bruno Guilherme Spirlandeli Marini         	RA: 17037607
+Caio Lima e Souza Della Torre Sanches 		RA: 17225285
+Jefferson Meneses da Silva                  RA: 17230400
+Marcos Aurélio Tavares de Sousa Filho 		RA: 17042284
+*/
+
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<errno.h>

@@ -1,3 +1,10 @@
+/*
+Bruno Guilherme Spirlandeli Marini         	RA: 17037607
+Caio Lima e Souza Della Torre Sanches 		RA: 17225285
+Jefferson Meneses da Silva                  RA: 17230400
+Marcos Aurélio Tavares de Sousa Filho 		RA: 17042284
+*/
+
 #include <linux/init.h>           // Macros used to mark up functions e.g. __init __exit
 #include <linux/module.h>         // Core header for loading LKMs into the kernel
 #include <linux/device.h>         // Header to support the kernel Driver Model
