@@ -17,6 +17,8 @@ int main(){
     char stringToSend[BUFFER_LENGTH - 2];
 	char send[BUFFER_LENGTH];
 
+	fd = open("/dev/MyCryptoRomance", O_RDWR);         // Open the device with read/write access
+	
 	do{
 		
 		do{
@@ -34,9 +36,7 @@ int main(){
 	   
 		if(opcao != 0){
 			
-			//fd = open("/dev/MyCryptoRomance", O_RDWR);         // Open the device with read/write access
-			fd = 1;
-			if (fd < 0){
+            if (fd < 0){
 				perror("FOMOS FALHOS AO ABRIR O DISPOSITIVO...\n");
 				printf("Erro cod. %d, %d\n", fd, (int)errno);
 				return errno;
@@ -72,18 +72,18 @@ int main(){
 			getchar();
 			scanf("%[^\n]%*c", stringToSend);  // Read in a string (with spaces)
 			
+			send[0] = ' ';
+			send[1] = ' ';
+			
 			if(op == 2)
-				c2h(stringToSend, &(send[2]), strlen(stringToSend) + 1);
-			
-			send[0] = fu[opcao - 1];
-			send[1] = ' ';		
+				c2h(&(stringToSend[2]), &(send[2]), strlen(stringToSend) + 1);
 	
+	        stringToSend[0] = fu[opcao - 1];
+			stringToSend[1] = ' ';	
+	
+			printf("Enviarei: [%s]\n", stringToSend);
 			
-			//strcat(send, stringToSend);
-			
-			printf("Enviarei: [%s]\n", send);
-			return 0;
-			//ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
+			ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
 			if (ret < 0){
 				perror("Failed to write the message to the device.");
 				return errno;
@@ -93,19 +93,50 @@ int main(){
 			getchar();
 
 			printf("Reading from the device...\n");
-			//ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+			
+			ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
 			if (ret < 0){
 				perror("Failed to read the message from the device.");
 				return errno;
 			}
-
+            
+            int temp = strlen(stringToSend);
+            if (temp % 16) {
+                temp /= 16;
+                temp += 1;
+                temp *= 16;
+            }
+            
 			unsigned char c;
-				for(int i=0;i<32;i++) {
+			/*
+            for(int i=0;i<32;i++) {
 				c = receive[i];
 				printf("The received message is: [%u]\n", c);
 			}
+            */
+			printf("Hex: ");
+				for(int i=0;i<temp;i++) {
+				c = receive[i];
+				printf("%02X", c);
+			}
+			printf("\n\n");
+			
+			printf("ASCII: ");
+			for(int i=0;i<temp;i++) {
+				c = receive[i];
+				printf("%c", c);
+			}
+			printf("\n");
+			
+			printf("Press ENTER to return to menu...\n");
+			getchar();
+			
+			stringToSend[0] = 0;
 		}
+		
 	}while(opcao != 0);
+	
+	close(fd);
 	
 	printf("End of the program\n");
 	return 0;
