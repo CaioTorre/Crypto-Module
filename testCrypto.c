@@ -75,7 +75,11 @@ int main(){
 		getchar();
 		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
 		
-		//printf("%s\n", send);
+		for (int i = 0; send[i] != '\0'; i++)
+			if(send[i] >= 'a' && send[i] <= 'z')
+				send[i] = send[i] -32;
+		
+		printf("%s\n", send);
 	
 		if(op == 2){
 			c2h(send, &(stringToSend[2]), strlen(send)); //+1
