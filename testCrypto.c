@@ -17,12 +17,14 @@ unsigned char receive[BUFFER_LENGTH];  // The receive buffer from the LKM
 
 void c2h(char *, char *, int );
 char c2h_conv(char);
+char h2c_conv(char);
 
 int main(){
 	
     int ret, fd, opcao, op;
     char stringToSend[BUFFER_LENGTH - 2];
 	char send[BUFFER_LENGTH];
+	char rcv;
 
 	fd = open("/dev/MyCryptoRomance", O_RDWR);         // Open the device with read/write access
 	
@@ -105,7 +107,7 @@ int main(){
 		stringToSend[1] = ' ';	
 	
 		
-		printf("Enviarei: [%s]\n\n", stringToSend);
+		//printf("Enviarei: [%s]\n\n", stringToSend);
 	
 		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
 		if (ret < 0){
@@ -129,14 +131,16 @@ int main(){
 		printf("Hex:   [");
 			for(int i=0;i<tamanho_new;i++) {
 			c = receive[i];
-			printf("%02X", c);
+			printf("%c", c);
 		}
 		printf("]\n");
 	
+		tamanho_new /= 2;
 		printf("ASCII: [");
 		for(int i=0;i<tamanho_new;i++) {
-			c = receive[i];
-			printf(" %c", c);
+			//c = receive[i];
+			//sscanf(&(receive[i]), "%02X", rcv);			
+			printf(" %c", (char)(h2c_conv(receive[2*i])*16 + h2c_conv(receive[2*i+1])));
 		}
 		printf("]\n");
 	
@@ -169,4 +173,9 @@ void c2h(char *charstrn, char *hexstrn, int charlen) {
 char c2h_conv(char c) {
     if (c < (char)10) return c + '0';
     return c + 'A' - (char)10;
+}
+
+char h2c_conv(char c) {
+	if (c <= '9') return c - '0';
+    return c - 'A' + (char)10;
 }

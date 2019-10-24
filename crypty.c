@@ -79,12 +79,12 @@ static char h2c_conv(char c) {
 	if (c <= '9') return c - '0';
     return c - 'A' + (char)10;
 }
-/*
+
 static char c2h_conv(char c) {
     if (c < (char)10) return c + '0';
     return c + 'A' - (char)10;
 }
-*/
+
 static void h2c(char *hexstrn, char *charstrn, int hexlen) { //Hexlen deve ser par
     hexlen--;
     while (hexlen > 0) {
@@ -257,16 +257,24 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     
     /* Exibir resultado para debug */
     resultdata = sg_virt(&sg_criptograf);
-	printk(KERN_INFO "===== BEGIN RESULT CRYPT ===== ");
+	printk(KERN_INFO "===== BEGIN RESULT CRYPT =====\n");
     hexdump(resultdata, scratchpad_size);
     printk(KERN_INFO "=====  END RESULT CRYPT  =====");
 
+	printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     /* Armazenar resposta para devolver ao programa */
-    for(x=0;x<scratchpad_size;x++)msgRet[x]=resultdata[x];
-    msgRet[x] = 0;
+    for(x=0;x<scratchpad_size;x++){
+        printk(KERN_CONT "[%d=>", (int)resultdata[x]);
+	    msgRet[2*x]     = c2h_conv((unsigned char)resultdata[x] / 16);
+	    printk(KERN_CONT "%c", msgRet[2*x]);
+	    msgRet[2*x + 1] = c2h_conv((unsigned char)resultdata[x] % 16);
+	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
+	}
+    msgRet[2*x] = 0;
+    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
     
     /* Armazenar tamanho da resposta do programa */
-    answerSize = scratchpad_size;
+    answerSize = 2*scratchpad_size + 1;
     
     /* Liberar estruturas utilizadas */
     out:
@@ -417,17 +425,24 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     
     /* Exibir resultado para debug */
     resultdata = sg_virt(&sg_decriptogr);
-	printk(KERN_INFO "===== BEGIN RESULT DECRYPT =====");
+	printk(KERN_INFO "===== BEGIN RESULT CRYPT =====\n");
     hexdump(resultdata, scratchpad_size);
-	printk(KERN_INFO "=====  END RESULT DECRYPT  =====");
-    
+    printk(KERN_INFO "=====  END RESULT CRYPT  =====");
+
+	printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     /* Armazenar resposta para devolver ao programa */
-   
-    for(x=0;x<scratchpad_size;x++) msgRet[x]=resultdata[x];
-    msgRet[x] = 0;
+    for(x=0;x<scratchpad_size;x++){
+        printk(KERN_CONT "[%d=>", (int)resultdata[x]);
+	    msgRet[2*x]     = c2h_conv((unsigned char)resultdata[x] / 16);
+	    printk(KERN_CONT "%c", msgRet[2*x]);
+	    msgRet[2*x + 1] = c2h_conv((unsigned char)resultdata[x] % 16);
+	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
+	}
+    msgRet[2*x] = 0;
+    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
     
     /* Armazenar tamanho da resposta do programa */
-    answerSize = scratchpad_size;
+    answerSize = 2*scratchpad_size + 1;
     
     /* Liberar estruturas utilizadas */
     out:
@@ -476,11 +491,22 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
 
     // Armazenar resposta para devolver ao programa 
     //hashval = sg_virt(&sg_hash);
-    for(x=0;x<SHA1_SIZE_BYTES;x++)msgRet[x]=hashval[x];
-    msgRet[x] = 0;
+    printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
+    /* Armazenar resposta para devolver ao programa */
+    for(x=0;x<SHA1_SIZE_BYTES;x++){
+        printk(KERN_CONT "[%d=>", (int)hashval[x]);
+	    msgRet[2*x]     = c2h_conv((unsigned char)hashval[x] / 16);
+	    printk(KERN_CONT "%c", msgRet[2*x]);
+	    msgRet[2*x + 1] = c2h_conv((unsigned char)hashval[x] % 16);
+	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
+	}
+    msgRet[2*x] = 0;
+    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
+    //for(x=0;x<SHA1_SIZE_BYTES;x++)msgRet[x]=hashval[x];
+    //msgRet[x] = 0;
     
     // Armazenar tamanho da resposta do programa
-    answerSize = SHA1_SIZE_BYTES;
+    answerSize = SHA1_SIZE_BYTES*2 + 1;
 
 out_hash:
     // Liberar estruturas utilizadas
