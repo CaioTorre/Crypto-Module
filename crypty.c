@@ -450,10 +450,11 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
 
 static int trigger_hash(char *plaintext, int tam_plaintext)
 {
-    struct scatterlist sg_hash;
+    //struct scatterlist sg_scratchpad, sg_hash;
     struct shash_desc *desc;
+    //char *hashing = NULL;
     struct crypto_shash *alg;
-    char hashval[SHA1_SIZE_BYTES];
+    char *hashval = NULL;
     
     int ret = -EFAULT; // Valor de retorno
     int x;             // Variavel contadora
@@ -464,11 +465,17 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     desc->tfm = alg;
     desc->flags = 0x0;
 
+    hashval = kmalloc(SHA1_SIZE_BYTES, GFP_KERNEL);
+    if (!hashval) goto out_hash;
+
     //Inicializando valores e hash
-    sg_init_one(&sg_hash, plaintext, tam_plaintext);
+    //sg_init_one(&sg_scratchpad, plaintext, tam_plaintext);
+    //sg_init_one(&sg_hash, hashing, SHA1_SIZE_BYTES);
+
     ret = crypto_shash_digest(desc, plaintext, tam_plaintext, hashval);
 
     // Armazenar resposta para devolver ao programa 
+    //hashval = sg_virt(&sg_hash);
     for(x=0;x<SHA1_SIZE_BYTES;x++)msgRet[x]=hashval[x];
     msgRet[x] = 0;
     
@@ -479,6 +486,7 @@ out_hash:
     // Liberar estruturas utilizadas
     if(alg) crypto_free_shash(alg);
     if(desc) kfree(desc);
+    if(hashval) kfree(hashval);
     return ret;
 }
 
