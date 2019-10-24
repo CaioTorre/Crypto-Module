@@ -87,19 +87,10 @@ static void h2c(char *hexstrn, char *charstrn, int hexlen) { //Hexlen deve ser p
     hexlen--;
     while (hexlen > 0) {
         charstrn[(int)(hexlen/2)] = h2c_conv(hexstrn[hexlen]) + 16 * h2c_conv(hexstrn[hexlen - 1]);
-	    printk(KERN_INFO "3 CHAR %d: %c %c => %c\n", hexlen, hexstrn[hexlen], hexstrn[hexlen - 1], charstrn[(int)(hexlen/2)]);
 	    hexlen -= 2;
 	}
 }
-/*
-static void c2h(char *charstrn, char *hexstrn, int charlen) {
-    charlen--;
-    while (charlen-- >= 0) {
-        hexstrn[2*charlen+1] = c2h_conv(charstrn[charlen] % (char)16); //1s
-        hexstrn[2*charlen] = c2h_conv(charstrn[charlen] / (char)16);   //16s
-    }
-}
-*/
+
 // The prototype functions for the character driver -- must come before the struct definition
 
 static int     dev_open(struct inode *, struct file *);
@@ -117,7 +108,6 @@ static struct file_operations fops =
 
 static void hexdump(unsigned char *buf, unsigned int len) {
 		unsigned char* aux = buf;
-		printk(KERN_INFO "HEXDUMP:\n");
         while (len--) { printk(KERN_CONT "%02x - %u ", *aux, *aux); aux++; }
         printk("\n");
 }
@@ -176,7 +166,6 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     
     /* Verificar o tamanho esperado do Vetor de Inicialização */
     expected_iv_size = crypto_skcipher_ivsize(skcipher);
-    pr_info("SKCipher esperando um IV de tamanho %d bytes\n", expected_iv_size);
     
     /* Requisitar uma área de memória para alocar a chave */
     Ekey = kmalloc(AES_KEY_SIZE_BYTES, GFP_KERNEL);
@@ -207,15 +196,12 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     
     /* Verificar se será necessário fazer padding */
     if (tam_plaintext % AES_IV_SIZE_BYTES) {
-        printk(KERN_INFO "Got incomplete blocks (%d bytes, or %d blocks)", tam_plaintext, tam_plaintext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = 1 + (tam_plaintext / AES_IV_SIZE_BYTES);
         scratchpad_size = AES_IV_SIZE_BYTES * n_cipher_blocks;
     } else {
-        printk(KERN_INFO "Got complete blocks (%d bytes, or %d blocks)", tam_plaintext, tam_plaintext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = tam_plaintext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_plaintext;
     }
-    pr_info("Tamanho do plaintext depois do padding: %d bytes (%d blocos)\n", scratchpad_size, n_cipher_blocks);
     
     /* Requisitar uma área de memória para alocar o plaintext */
     scratchpad = kmalloc(scratchpad_size, GFP_KERNEL);
@@ -251,25 +237,16 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
         pr_info("Encryption failed...\n");
         goto out;
     }
-    pr_info("Encryption triggered successfully\n");
     
     /* Exibir resultado para debug */
     resultdata = sg_virt(&sg_criptograf);
-	printk(KERN_INFO "===== BEGIN RESULT CRYPT =====\n");
-    hexdump(resultdata, scratchpad_size);
-    printk(KERN_INFO "=====  END RESULT CRYPT  =====");
 
-	printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     /* Armazenar resposta para devolver ao programa */
     for(x=0;x<scratchpad_size;x++){
-        printk(KERN_CONT "[%d=>", (int)resultdata[x]);
 	    msgRet[2*x]     = c2h_conv((unsigned char)resultdata[x] / 16);
-	    printk(KERN_CONT "%c", msgRet[2*x]);
 	    msgRet[2*x + 1] = c2h_conv((unsigned char)resultdata[x] % 16);
-	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
 	}
     msgRet[2*x] = 0;
-    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
     
     /* Armazenar tamanho da resposta do programa */
     answerSize = 2*scratchpad_size + 1;
@@ -340,7 +317,6 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     
     /* Verificar o tamanho esperado do Vetor de Inicialização */
     expected_iv_size = crypto_skcipher_ivsize(skcipher);
-    pr_info("SKCipher esperando um IV de tamanho %d bytes\n", expected_iv_size);
     
     /* Requisitar uma área de memória para alocar a chave */
     Ekey = kmalloc(AES_KEY_SIZE_BYTES, GFP_KERNEL);
@@ -371,16 +347,13 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     
     /* Verificar se será necessário fazer padding */
     if (tam_ciphertext % AES_IV_SIZE_BYTES) {
-        printk(KERN_INFO "Got incomplete blocks (%d bytes, or %d blocks)", tam_ciphertext, tam_ciphertext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = 1 + (tam_ciphertext / AES_IV_SIZE_BYTES);
         scratchpad_size = AES_IV_SIZE_BYTES * n_cipher_blocks;
     } else {
-        printk(KERN_INFO "Got complete blocks (%d bytes, or %d blocks)", tam_ciphertext, tam_ciphertext / AES_IV_SIZE_BYTES);
         n_cipher_blocks = tam_ciphertext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_ciphertext;
     }
 
-    pr_info("Tamanho do plaintext depois do padding: %d bytes (%d blocos)\n", scratchpad_size, n_cipher_blocks);
     
     /* Requisitar uma área de memória para alocar o plaintext */
     scratchpad = kmalloc(scratchpad_size, GFP_KERNEL);
@@ -417,25 +390,16 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
         pr_info("Decryption failed...\n");
         goto out;
     }
-    pr_info("Decryption triggered successfully\n");
     
     /* Exibir resultado para debug */
     resultdata = sg_virt(&sg_decriptogr);
-	printk(KERN_INFO "===== BEGIN RESULT DECRYPT =====\n");
-    hexdump(resultdata, scratchpad_size);
-    printk(KERN_INFO "=====  END RESULT DECRYPT  =====");
 
-	printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     /* Armazenar resposta para devolver ao programa */
     for(x=0;x<scratchpad_size;x++){
-        printk(KERN_CONT "[%d=>", (int)resultdata[x]);
 	    msgRet[2*x]     = c2h_conv((unsigned char)resultdata[x] / 16);
-	    printk(KERN_CONT "%c", msgRet[2*x]);
 	    msgRet[2*x + 1] = c2h_conv((unsigned char)resultdata[x] % 16);
-	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
 	}
     msgRet[2*x] = 0;
-    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
     
     /* Armazenar tamanho da resposta do programa */
     answerSize = 2*scratchpad_size + 1;
@@ -478,16 +442,11 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     ret = crypto_shash_digest(desc, plaintext, tam_plaintext, hashval);
 
     // Armazenar resposta para devolver ao programa 
-    printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     for(x=0;x<SHA1_SIZE_BYTES;x++){
-        printk(KERN_CONT "[%d=>", (int)hashval[x]);
 	    msgRet[2*x]     = c2h_conv((unsigned char)hashval[x] / 16);
-	    printk(KERN_CONT "%c", msgRet[2*x]);
 	    msgRet[2*x + 1] = c2h_conv((unsigned char)hashval[x] % 16);
-	    printk(KERN_CONT "%c]", msgRet[2*x+1]);
 	}
     msgRet[2*x] = 0;
-    printk(KERN_INFO "=====  END RESULT ENCOD  =====");
     
     // Armazenar tamanho da resposta do programa
     answerSize = SHA1_SIZE_BYTES*2 + 1;
@@ -502,7 +461,6 @@ out_hash:
 
 static int __init cripty_init(void){
     static int i;
-    pr_info("Inicializado cripty.c\n");
 
     /*  Copiando conteudo para os vetores */
     for(i = 0; i < strlen(key) && i < PARAM_LEN - 1; i++)
@@ -522,12 +480,9 @@ static int __init cripty_init(void){
     crp_key_hex[PARAM_LEN - 1] = '\0';
     crp_iv_hex[PARAM_LEN - 1] = '\0';
     
-    printk(KERN_INFO "ALO: %s %s\n", crp_key_hex, crp_iv_hex);
-    
     h2c(crp_key_hex, crp_key, PARAM_LEN-1);
     h2c(crp_iv_hex,  crp_iv,  PARAM_LEN-1);
 
-    printk(KERN_INFO "ENTÂO MEU PACERO: %s %s\n", crp_key, crp_iv);
    /* Fim Copia */
    
    mutex_init(&ebbchar_mutex); // Initialize the mutex lock dynamically at runtime
@@ -538,7 +493,6 @@ static int __init cripty_init(void){
       printk(KERN_ALERT "EBBChar failed to register a major number\n");
       return majorNumber;
    }
-   printk(KERN_INFO "EBBChar: registered correctly with major number %d\n", majorNumber);
 
    // Register the device class
    ebbcharClass = class_create(THIS_MODULE, CLASS_NAME);
@@ -547,7 +501,7 @@ static int __init cripty_init(void){
       printk(KERN_ALERT "Failed to register device class\n");
       return PTR_ERR(ebbcharClass);          // Correct way to return an error on a pointer
    }
-   printk(KERN_INFO "EBBChar: device class registered correctly\n");
+   //printk(KERN_INFO "EBBChar: device class registered correctly\n");
 
    // Register the device driver
    ebbcharDevice = device_create(ebbcharClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
@@ -557,7 +511,6 @@ static int __init cripty_init(void){
       printk(KERN_ALERT "Failed to create the device\n");
       return PTR_ERR(ebbcharDevice);
    }
-   printk(KERN_INFO "EBBChar: device class created correctly\n"); // Made it! device was initialized
    
    return 0;
 }
@@ -567,7 +520,6 @@ static int __init cripty_init(void){
  *  code is used for a built-in driver (not a LKM) that this function is not required.
  */
 static void __exit cripty_exit(void){
-   pr_info("Finalizando cripty.c\n");
    mutex_destroy(&ebbchar_mutex);                           // destroy the dynamically-allocated mutex
    device_destroy(ebbcharClass, MKDEV(majorNumber, 0));     // remove the device
    class_unregister(ebbcharClass);                          // unregister the device class
@@ -588,7 +540,6 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
    error_count = copy_to_user(buffer, msgRet, answerSize);
    
    if (error_count==0){            // if true then have success
-      printk(KERN_INFO "EBBChar: Sent %d characters to the user\n", answerSize);
       return (size_of_message=0);  // clear the position to the start and return 0
    }
    else {
@@ -599,28 +550,17 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
    sprintf(message, "%s", buffer);
-   printk(KERN_INFO "EBBChar: Received %zu characters from the user: %s\n", len, message);
 
+   h2c(message+2, mensagemChar, len-2);
+   
    switch(message[0]){
       case 'c': // cifrar
-		printk(KERN_INFO "TO CRIPTOGRAFANDO");
-		printk(KERN_INFO "Msg[ANTES]= %s\n", message+2);
-		h2c(message+2, mensagemChar, len-2);
-		printk(KERN_INFO "Msg[DEPOIS]= %s (%d bytes)\n", mensagemChar, (int)(len-2)/2);
 		trigger_skcipher_encrypt(mensagemChar, (len-2)/2); 
 		break;
-	  case 'd': // decifrar
-		printk(KERN_INFO "TO DESCRIPTOGRAFANDO\n");
-		printk(KERN_INFO "Msg[ANTES]= %s", message+2);
-		h2c(message+2, mensagemChar, len-2);
-		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);		
+	  case 'd': // decifrar	
 		trigger_skcipher_decrypt(mensagemChar, (len-2)/2);
     	break;
-      case 'h': // resumo criptográico
-		printk(KERN_INFO "TO MANDANDO O RESUMO\n");
-		printk(KERN_INFO "Msg[ANTES]= %s\n", message+2);
-		h2c(message+2, mensagemChar, len-2);
-		printk(KERN_INFO "Msg[DEPOIS]= %s (%d bytes)\n", mensagemChar, (int)(len-2)/2);
+      case 'h': // resumo criptográfico
 		trigger_hash(mensagemChar, (len-2)/2); 
     	break;
    }

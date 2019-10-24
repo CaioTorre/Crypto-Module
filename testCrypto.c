@@ -48,75 +48,75 @@ int main(){
 				perror("FOMOS FALHOS AO ABRIR O DISPOSITIVO...\n");
 				printf("Erro cod. %d, %d\n", fd, (int)errno);
 				return errno;
-		}
+		    }
 		
 	        char fu[] = {'c', 'd', 'h'};
 			
-		printf("\nDigite a string a ser ");
+		    printf("\nDigite a string a ser ");
 		
-		switch(opcao){
-			case 1:
-					printf("cifr");
-				break;
-			case 2:
-					printf("decifr");
-				break;
-			case 3:
-					printf("hashe");
-				break;
-		}
+		    switch(opcao){
+			    case 1:
+					    printf("cifr");
+				    break;
+			    case 2:
+					    printf("decifr");
+				    break;
+			    case 3:
+					    printf("hashe");
+				    break;
+		    }
 			
-		printf("ada: ");
-		getchar();
-		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
+		    printf("ada: ");
+		    getchar();
+		    scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
 		
-		for(int i = 0; i < strlen(send); i++)
-		{
-			if(send[i] >= 'a' && send[i]<='z')
-			send[i]-=32;
-		}
+		    for(int i = 0; i < strlen(send); i++)
+		    {
+			    if(send[i] >= 'a' && send[i]<='z')
+			    send[i]-=32;
+		    }
 
-    	int p;
-    	for (p = 0; p < strlen(send); p++) stringToSend[p + 2] = send[p];
-		stringToSend[p + 2] = 0;
-		stringToSend[0] = fu[opcao - 1];
-		stringToSend[1] = ' ';	
+        	int p;
+        	for (p = 0; p < strlen(send); p++) stringToSend[p + 2] = send[p];
+		    stringToSend[p + 2] = 0;
+		    stringToSend[0] = fu[opcao - 1];
+		    stringToSend[1] = ' ';	
 	
-		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
-		if (ret < 0){
-			perror("Failed to write the message to the device.");
-			return errno;
-		}
+		    ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
+		    if (ret < 0){
+			    perror("Failed to write the message to the device.");
+			    return errno;
+		    }
 	
-		ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+		    ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
 		
-		if (ret < 0){
-			perror("Failed to read the message from the device.");
-			return errno;
-		}
-        
-        int tamanho_new = 0;
-        while (receive[tamanho_new] != 0) tamanho_new++;
-        
-		unsigned char c;
+		    if (ret < 0){
+			    perror("Failed to read the message from the device.");
+			    return errno;
+		    }
+            
+            int tamanho_new = 0;
+            while (receive[tamanho_new] != 0) tamanho_new++;
+            
+		    unsigned char c;
 
-		printf("Hex:   [");
-		for(int i=0;i<tamanho_new;i++) 
-			printf("%c", receive[i]);
-		printf("]\n");
+		    printf("Hex:   [");
+		    for(int i=0;i<tamanho_new;i++) 
+			    printf("%c", receive[i]);
+		    printf("]\n");
 	
-		tamanho_new /= 2;
-		printf("ASCII: [");
-		for(int i=0;i<tamanho_new;i++) 			
-			printf(" %c", (char)(h2c_conv(receive[2*i])*16 + h2c_conv(receive[2*i+1])));
-		printf("]\n");
+		    tamanho_new /= 2;
+		    printf("ASCII: [");
+		    for(int i=0;i<tamanho_new;i++) 			
+			    printf(" %c", (char)(h2c_conv(receive[2*i])*16 + h2c_conv(receive[2*i+1])));
+		    printf("]\n");
 	
-	    for(int i=0;i<BUFFER_LENGTH;i++) receive[i] = 0;
-	    
-		printf("Press ENTER to return to menu...\n");
-		getchar();
+	        for(int i=0;i<BUFFER_LENGTH;i++) receive[i] = 0;
+	        
+		    printf("Press ENTER to return to menu...\n");
+		    getchar();
 	
-		stringToSend[0] = 0;
+		    stringToSend[0] = 0;
 		}
 		
 	}while(opcao != 0);
