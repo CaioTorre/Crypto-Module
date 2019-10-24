@@ -5,7 +5,6 @@ Jefferson Meneses da Silva                  RA: 17230400
 Marcos Aurélio Tavares de Sousa Filho 		RA: 17042284
 */
 
-
 #include<stdio.h>
 #include<stdlib.h>
 #include<errno.h>
@@ -85,10 +84,10 @@ int main(){
 		getchar();
 		scanf("%[^\n]%*c", send);  // Read in a string (with spaces)
 		
-		for(int i = 0; i < strlen(string); i++)
+		for(int i = 0; i < strlen(send); i++)
 		{
-			if(string[i] >= 'a' && string[i]<='z')
-			string[i]-=32;
+			if(send[i] >= 'a' && send[i]<='z')
+			send[i]-=32;
 		}
 		
 		//printf("%s\n", send);
