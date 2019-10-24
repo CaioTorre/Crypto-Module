@@ -474,7 +474,8 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     
     // Armazenar tamanho da resposta do programa
     answerSize = SHA1_SIZE_BYTES;
-    
+
+out_hash:
     // Liberar estruturas utilizadas
     if(alg) crypto_free_shash(alg);
     if(desc) kfree(desc);
