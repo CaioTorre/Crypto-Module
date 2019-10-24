@@ -22,8 +22,6 @@ Marcos Aurélio Tavares de Sousa Filho 		RA: 17042284
 #include <linux/scatterlist.h>
 #include <crypto/skcipher.h>
 #include <linux/err.h>
-//#include <linux/hash.h>
-
 
 #define DEVICE_NAME "MyCryptoRomance"    // The device will appear at /dev/ebbchar using this value
 #define CLASS_NAME  "MyCrypto"           // The device class -- this is a character device driver
@@ -290,8 +288,6 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
         kfree(scratchpad);
     if (criptograf)
         kfree(criptograf);
-    //if (resultdata)
-    //    kfree(resultdata);
     return ret;
 }
 
@@ -425,9 +421,9 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     
     /* Exibir resultado para debug */
     resultdata = sg_virt(&sg_decriptogr);
-	printk(KERN_INFO "===== BEGIN RESULT CRYPT =====\n");
+	printk(KERN_INFO "===== BEGIN RESULT DECRYPT =====\n");
     hexdump(resultdata, scratchpad_size);
-    printk(KERN_INFO "=====  END RESULT CRYPT  =====");
+    printk(KERN_INFO "=====  END RESULT DECRYPT  =====");
 
 	printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
     /* Armazenar resposta para devolver ao programa */
@@ -458,16 +454,12 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
         kfree(scratchpad);
     if (decriptogr)
         kfree(decriptogr);
-    //if (resultdata)
-    //    kfree(resultdata);
     return ret;
 }
 
 static int trigger_hash(char *plaintext, int tam_plaintext)
 {
-    //struct scatterlist sg_scratchpad, sg_hash;
     struct shash_desc *desc;
-    //char *hashing = NULL;
     struct crypto_shash *alg;
     char *hashval = NULL;
     
@@ -483,16 +475,10 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     hashval = kmalloc(SHA1_SIZE_BYTES, GFP_KERNEL);
     if (!hashval) goto out_hash;
 
-    //Inicializando valores e hash
-    //sg_init_one(&sg_scratchpad, plaintext, tam_plaintext);
-    //sg_init_one(&sg_hash, hashing, SHA1_SIZE_BYTES);
-
     ret = crypto_shash_digest(desc, plaintext, tam_plaintext, hashval);
 
     // Armazenar resposta para devolver ao programa 
-    //hashval = sg_virt(&sg_hash);
     printk(KERN_INFO "===== BEGIN RESULT ENCOD =====\n");
-    /* Armazenar resposta para devolver ao programa */
     for(x=0;x<SHA1_SIZE_BYTES;x++){
         printk(KERN_CONT "[%d=>", (int)hashval[x]);
 	    msgRet[2*x]     = c2h_conv((unsigned char)hashval[x] / 16);
@@ -502,8 +488,6 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
 	}
     msgRet[2*x] = 0;
     printk(KERN_INFO "=====  END RESULT ENCOD  =====");
-    //for(x=0;x<SHA1_SIZE_BYTES;x++)msgRet[x]=hashval[x];
-    //msgRet[x] = 0;
     
     // Armazenar tamanho da resposta do programa
     answerSize = SHA1_SIZE_BYTES*2 + 1;
@@ -593,13 +577,8 @@ static void __exit cripty_exit(void){
 
 static int dev_open(struct inode *inodep, struct file *filep){
 
-  mutex_lock(&ebbchar_mutex);   // Try to acquire the mutex (i.e., put the lock on/down)
-                                // returns 1 if successful and 0 if there is contention
-   //printk(KERN_ALERT "EBBChar: Device in use by another process");
-   //return -EBUSY;
-
+   mutex_lock(&ebbchar_mutex);   // Try to acquire the mutex (i.e., put the lock on/down)
    numberOpens++;
-   //printk(KERN_INFO "EBBChar: Device has been opened %d time(s)\n", numberOpens);
    return 0;
 }
 
@@ -619,8 +598,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 }
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-   sprintf(message, "%s", buffer);   // appending received string with its length
-   //size_of_message = strlen(message);                 // store the length of the stored message
+   sprintf(message, "%s", buffer);
    printk(KERN_INFO "EBBChar: Received %zu characters from the user: %s\n", len, message);
 
    switch(message[0]){
@@ -629,7 +607,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		printk(KERN_INFO "Msg[ANTES]= %s\n", message+2);
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s (%d bytes)\n", mensagemChar, (int)(len-2)/2);
-		trigger_skcipher_encrypt(mensagemChar, (len-2)/2); //param key e iv
+		trigger_skcipher_encrypt(mensagemChar, (len-2)/2); 
 		break;
 	  case 'd': // decifrar
 		printk(KERN_INFO "TO DESCRIPTOGRAFANDO\n");
@@ -637,14 +615,13 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s", mensagemChar);		
 		trigger_skcipher_decrypt(mensagemChar, (len-2)/2);
-		//test_skcipher(crp_key,crp_iv,mensagemChar, 0);
     	break;
       case 'h': // resumo criptográico
 		printk(KERN_INFO "TO MANDANDO O RESUMO\n");
 		printk(KERN_INFO "Msg[ANTES]= %s\n", message+2);
 		h2c(message+2, mensagemChar, len-2);
 		printk(KERN_INFO "Msg[DEPOIS]= %s (%d bytes)\n", mensagemChar, (int)(len-2)/2);
-		trigger_hash(mensagemChar, (len-2)/2); //param key e iv
+		trigger_hash(mensagemChar, (len-2)/2); 
     	break;
    }
 

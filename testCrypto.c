@@ -31,7 +31,6 @@ int main(){
 	do{
 		
 		do{
-			//system("clear");
 			printf("-------------------------------------------------\n");
 			printf(" Digite a opcao desejada: \n\n");
 			printf(" 0. Sair;\n");
@@ -50,22 +49,7 @@ int main(){
 				printf("Erro cod. %d, %d\n", fd, (int)errno);
 				return errno;
 		}
-			
-	
-		//system("clear");
-		/*
-		if(opcao == 1){
-			printf("-------------------------------------------------\n");
-			printf(" Digite a forma que deseja digitar a string: \n\n");
-			printf(" 1. Hexadecimal;\n");
-			printf(" 2. ASCII;\n\n");
-			printf(" Opcao: ");
-			scanf("%i", &op);
-			printf("-------------------------------------------------\n");
-		}else{
-			op = 1;				
-		}	*/
-		op = 1;
+		
 	        char fu[] = {'c', 'd', 'h'};
 			
 		printf("\nDigite a string a ser ");
@@ -91,23 +75,12 @@ int main(){
 			if(send[i] >= 'a' && send[i]<='z')
 			send[i]-=32;
 		}
-		
-		//printf("%s\n", send);
-	
-		if(op == 2){
-			c2h(send, &(stringToSend[2]), strlen(send)); //+1
-			stringToSend[2 + strlen(send) * 2] = 0;			
-      	}else{
-      	    int p;
-      	    for (p = 0; p < strlen(send); p++) stringToSend[p + 2] = send[p];
-			stringToSend[p + 2] = 0;
-		}
-	
+
+    	int p;
+    	for (p = 0; p < strlen(send); p++) stringToSend[p + 2] = send[p];
+		stringToSend[p + 2] = 0;
 		stringToSend[0] = fu[opcao - 1];
 		stringToSend[1] = ' ';	
-	
-		
-		//printf("Enviarei: [%s]\n\n", stringToSend);
 	
 		ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
 		if (ret < 0){
@@ -124,24 +97,18 @@ int main(){
         
         int tamanho_new = 0;
         while (receive[tamanho_new] != 0) tamanho_new++;
-        //printf("Tamanho new = %d\n", tamanho_new);
         
 		unsigned char c;
 
 		printf("Hex:   [");
-			for(int i=0;i<tamanho_new;i++) {
-			c = receive[i];
-			printf("%c", c);
-		}
+		for(int i=0;i<tamanho_new;i++) 
+			printf("%c", receive[i]);
 		printf("]\n");
 	
 		tamanho_new /= 2;
 		printf("ASCII: [");
-		for(int i=0;i<tamanho_new;i++) {
-			//c = receive[i];
-			//sscanf(&(receive[i]), "%02X", rcv);			
+		for(int i=0;i<tamanho_new;i++) 			
 			printf(" %c", (char)(h2c_conv(receive[2*i])*16 + h2c_conv(receive[2*i+1])));
-		}
 		printf("]\n");
 	
 	    for(int i=0;i<BUFFER_LENGTH;i++) receive[i] = 0;
@@ -162,7 +129,6 @@ int main(){
 
 void c2h(char *charstrn, char *hexstrn, int charlen) {
 	int tam = charlen;
-	//charlen--;
     while (charlen-- >= 0) {
         hexstrn[2*charlen+1] = c2h_conv(charstrn[charlen] % (char)16); //1s
         hexstrn[2*charlen] = c2h_conv(charstrn[charlen] / (char)16);   //16s
