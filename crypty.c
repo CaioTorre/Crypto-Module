@@ -460,7 +460,7 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     
     alg = crypto_alloc_shash("sha1", 0, 0);
     desc = kmalloc(sizeof(struct shash_desc), GFP_KERNEL);
-    if (!desc) return (long int)ERR_PTR(-ENOMEM);
+    if (!desc){return (long int)ERR_PTR(-ENOMEM); goto out_hash;}
     desc->tfm = alg;
     desc->flags = 0x0;
 
@@ -476,7 +476,8 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     answerSize = SHA1_SIZE_BYTES;
     
     // Liberar estruturas utilizadas
-    crypto_free_shash(alg);
+    if(alg) crypto_free_shash(alg);
+    if(desc) kfree(desc);
     return ret;
 }
 
