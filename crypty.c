@@ -22,6 +22,7 @@ Marcos Aurélio Tavares de Sousa Filho 		RA: 17042284
 #include <linux/scatterlist.h>
 #include <crypto/skcipher.h>
 #include <linux/err.h>
+#include <linux/vmalloc.h>
 
 #define DEVICE_NAME "MyCryptoRomance"    // The device will appear at /dev/ebbchar using this value
 #define CLASS_NAME  "MyCrypto"           // The device class -- this is a character device driver
@@ -168,7 +169,7 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     expected_iv_size = crypto_skcipher_ivsize(skcipher);
     
     /* Requisitar uma área de memória para alocar a chave */
-    Ekey = kmalloc(AES_KEY_SIZE_BYTES, GFP_KERNEL);
+    Ekey = vmalloc(AES_KEY_SIZE_BYTES);
     if (!Ekey) {
         pr_info("Could not allocate key\n");
         goto out;
@@ -185,7 +186,7 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     }
     
     /* Requisitar uma área de memória para alocar o IV */
-    Eivdata = kmalloc(AES_IV_SIZE_BYTES, GFP_KERNEL);
+    Eivdata = vmalloc(AES_IV_SIZE_BYTES);
     if (!Eivdata) {
         pr_info("Could not allocate ivdata\n");
         goto out;
@@ -204,7 +205,7 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     }
     
     /* Requisitar uma área de memória para alocar o plaintext */
-    scratchpad = kmalloc(scratchpad_size, GFP_KERNEL);
+    scratchpad = vmalloc(scratchpad_size);
     if (!scratchpad) {
         pr_info("Could not allocate scratchpad\n");
         goto out;
@@ -216,7 +217,7 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     for(;    x<scratchpad_size; x++) scratchpad[x] = 0;
     
     /* Requisitar uma área de memória para alocar o resultado da criptografia */
-    criptograf = kmalloc(scratchpad_size, GFP_KERNEL);
+    criptograf = vmalloc(scratchpad_size);
     if (!criptograf) {
         pr_info("Could not allocate criptograf\n");
         goto out;
@@ -258,13 +259,13 @@ static int trigger_skcipher_encrypt(char *plaintext, int tam_plaintext)
     if (req)
         skcipher_request_free(req);
     if (Ekey)
-    	kfree(Ekey);
+    	vfree(Ekey);
     if (Eivdata)
-        kfree(Eivdata);
+        vfree(Eivdata);
     if (scratchpad)
-        kfree(scratchpad);
+        vfree(scratchpad);
     if (criptograf)
-        kfree(criptograf);
+        vfree(criptograf);
     return ret;
 }
 
@@ -319,7 +320,7 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     expected_iv_size = crypto_skcipher_ivsize(skcipher);
     
     /* Requisitar uma área de memória para alocar a chave */
-    Ekey = kmalloc(AES_KEY_SIZE_BYTES, GFP_KERNEL);
+    Ekey = vmalloc(AES_KEY_SIZE_BYTES);
     if (!Ekey) {
         pr_info("Could not allocate key\n");
         goto out;
@@ -336,7 +337,7 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     }
     
     /* Requisitar uma área de memória para alocar o IV */
-    Eivdata = kmalloc(AES_IV_SIZE_BYTES, GFP_KERNEL);
+    Eivdata = vmalloc(AES_IV_SIZE_BYTES);
     if (!Eivdata) {
         pr_info("Could not allocate ivdata\n");
         goto out;
@@ -353,10 +354,9 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
         n_cipher_blocks = tam_ciphertext / AES_IV_SIZE_BYTES;
         scratchpad_size = tam_ciphertext;
     }
-
     
     /* Requisitar uma área de memória para alocar o plaintext */
-    scratchpad = kmalloc(scratchpad_size, GFP_KERNEL);
+    scratchpad = vmalloc(scratchpad_size);
     if (!scratchpad) {
         pr_info("Could not allocate scratchpad\n");
         goto out;
@@ -369,7 +369,7 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     for(;    x<tam_ciphertext; x++) scratchpad[x] = 0;
     
     /* Requisitar uma área de memória para alocar o resultado da criptografia */
-    decriptogr = kmalloc(scratchpad_size, GFP_KERNEL);
+    decriptogr = vmalloc(scratchpad_size);
     if (!decriptogr) {
         pr_info("Could not allocate decriptogr\n");
         goto out;
@@ -411,13 +411,13 @@ static int trigger_skcipher_decrypt(char *ciphertext, int tam_ciphertext)
     if (req)
         skcipher_request_free(req);
     if (Ekey)
-    	kfree(Ekey);
+    	vfree(Ekey);
     if (Eivdata)
-        kfree(Eivdata);
+        vfree(Eivdata);
     if (scratchpad)
-        kfree(scratchpad);
+        vfree(scratchpad);
     if (decriptogr)
-        kfree(decriptogr);
+        vfree(decriptogr);
     return ret;
 }
 
@@ -431,12 +431,12 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
     int x;             // Variavel contadora
     
     alg = crypto_alloc_shash("sha1", 0, 0);
-    desc = kmalloc(sizeof(struct shash_desc), GFP_KERNEL);
+    desc = vmalloc(sizeof(struct shash_desc));
     if (!desc){return (long int)ERR_PTR(-ENOMEM); goto out_hash;}
     desc->tfm = alg;
     desc->flags = 0x0;
 
-    hashval = kmalloc(SHA1_SIZE_BYTES, GFP_KERNEL);
+    hashval = vmalloc(SHA1_SIZE_BYTES + 1);
     if (!hashval) goto out_hash;
 
     ret = crypto_shash_digest(desc, plaintext, tam_plaintext, hashval);
@@ -454,8 +454,8 @@ static int trigger_hash(char *plaintext, int tam_plaintext)
 out_hash:
     // Liberar estruturas utilizadas
     if(alg) crypto_free_shash(alg);
-    if(desc) kfree(desc);
-    if(hashval) kfree(hashval);
+    if(desc) vfree(desc);
+    if(hashval) vfree(hashval);
     return ret;
 }
 
@@ -530,6 +530,7 @@ static void __exit cripty_exit(void){
 static int dev_open(struct inode *inodep, struct file *filep){
 
    mutex_lock(&ebbchar_mutex);   // Try to acquire the mutex (i.e., put the lock on/down)
+   printk(KERN_INFO "EBBChar: Device successfully opened\n");
    numberOpens++;
    return 0;
 }
